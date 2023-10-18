@@ -5,7 +5,7 @@
 3. [PrincetonUniversity/multi_gpu_training](https://github.com/PrincetonUniversity/multi_gpu_training)
 4. [Deep Learning with Multiple GPUs](https://www.run.ai/guides/multi-gpu)
 
-這邊最主要的重點還是要再便宜的雲端平台透過 image 快速設立，一開始會是雲端單卡的測試，之後會是雲端單機多卡的測試。
+這邊最主要的重點還是要在便宜的雲端平台透過 image 快速設立，一開始會是雲端單卡的測試，之後會是雲端單機多卡的測試。
 
 ## 會實做的：
 
