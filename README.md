@@ -1,6 +1,7 @@
 # Chatbot_Demo
 
 醫療聊天機器人的客服實現
+![cover](./img/cover.png)
 
 1.先使用資料集微調並上傳微調好的模型到 huggingface
 
