@@ -12,4 +12,6 @@
 
 4.[使用breeze 微調的版本](https://github.com/markl-a/Chatbot_Demo/blob/main/4.medical_chat_Breeze_7B_Instruct_v1_0.ipynb)
 
-5.使用另一模型跟llama factory微調的版本
+5.[使用另一模型跟llama factory微調的版本](https://github.com/markl-a/Chatbot_Demo/blob/main/5.%E4%BD%BF%E7%94%A8_LLaMA_Factory_%E5%BE%AE%E8%B0%83%E3%80%8D.ipynb)
+
+介面大概這樣設定就可以了
