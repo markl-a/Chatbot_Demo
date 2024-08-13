@@ -8,7 +8,7 @@
 
 2.[使用 gradio 當作 demo](https://github.com/markl-a/Chatbot_Demo/blob/main/2.Gradio.ipynb)
 
-3.模型量化後的版本->可下載到ollama運作
+3.模型量化並上傳到huggingface->可下載到ollama運作
 
 4.使用breeze 微調的版本
 
