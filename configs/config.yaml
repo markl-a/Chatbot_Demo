@@ -1,0 +1,101 @@
+# Medical Chatbot Configuration
+
+# Model settings
+model:
+  base_model: "taide/TAIDE-LX-7B-Chat"
+  alternative_models:
+    - "MediaTek-Research/Breeze-7B-Instruct-v1_0"
+  fine_tuned_model: "mark1098/TAIDE-LX-7B-Chat-Medical-Fintune"
+  torch_dtype: "bfloat16"
+  device_map: "auto"
+  use_fast_tokenizer: false
+
+# Dataset settings
+dataset:
+  name: "MedText_zhtw"
+  url: "https://huggingface.co/datasets/ChenWeiLi/Medtext_zhtw/raw/main/MedText_zhtw.json"
+  raw_path: "data/raw/MedText_zhtw.json"
+  processed_path: "data/processed/MedText_zhtw_processed.json"
+  train_test_split: 0.9
+  max_length: 384
+
+# Training settings
+training:
+  output_dir: "models/checkpoints"
+  logging_dir: "logs"
+  per_device_train_batch_size: 64
+  per_device_eval_batch_size: 32
+  gradient_accumulation_steps: 4
+  num_train_epochs: 40
+  learning_rate: 0.00005
+  weight_decay: 0.01
+  warmup_ratio: 0.1
+  save_strategy: "steps"
+  save_steps: 50
+  save_total_limit: 5
+  logging_steps: 10
+  evaluation_strategy: "steps"
+  eval_steps: 100
+  gradient_checkpointing: true
+  fp16: false
+  bf16: true
+
+# LoRA settings
+lora:
+  r: 8
+  lora_alpha: 32
+  lora_dropout: 0.1
+  target_modules:
+    - "q_proj"
+    - "k_proj"
+    - "v_proj"
+    - "o_proj"
+    - "gate_proj"
+    - "up_proj"
+    - "down_proj"
+  task_type: "CAUSAL_LM"
+  inference_mode: false
+
+# Inference settings
+inference:
+  max_new_tokens: 90
+  temperature: 0.15
+  top_p: 0.15
+  top_k: 50
+  repetition_penalty: 1.6
+  do_sample: true
+  num_beams: 1
+
+# System prompt
+prompts:
+  system: "你是一位專業的醫療人員，請用心且專業的以三到五句話回答問題。"
+  system_detailed: "你是一位專業的醫療人員，請用心且專業的回答問題。"
+
+# API settings
+api:
+  host: "0.0.0.0"
+  port: 8000
+  workers: 1
+  reload: false
+  log_level: "info"
+
+# Gradio settings
+gradio:
+  share: false
+  server_name: "0.0.0.0"
+  server_port: 7860
+  enable_queue: true
+
+# Logging settings
+logging:
+  level: "INFO"
+  format: "<green>{time:YYYY-MM-DD HH:mm:ss}</green> | <level>{level: <8}</level> | <cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> - <level>{message}</level>"
+  file: "logs/medical_chatbot.log"
+  rotation: "10 MB"
+  retention: "1 week"
+
+# Quantization settings (for GGUF)
+quantization:
+  output_format: "gguf"
+  quantization_type: "q5_k_m"
+  output_dir: "models/quantized"
