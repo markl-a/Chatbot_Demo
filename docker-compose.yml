@@ -1,0 +1,62 @@
+version: '3.8'
+
+services:
+  medical-chatbot-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: medical-chatbot-api
+    ports:
+      - "8000:8000"
+    environment:
+      - HF_TOKEN=${HF_TOKEN}
+      - HF_READ_TOKEN=${HF_READ_TOKEN}
+      - HF_WRITE_TOKEN=${HF_WRITE_TOKEN}
+    env_file:
+      - .env
+    volumes:
+      - ./data:/app/data
+      - ./models:/app/models
+      - ./logs:/app/logs
+      - ./configs:/app/configs
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    command: uvicorn medical_chatbot.api.server:app --host 0.0.0.0 --port 8000
+    restart: unless-stopped
+
+  medical-chatbot-gradio:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: medical-chatbot-gradio
+    ports:
+      - "7860:7860"
+    environment:
+      - HF_TOKEN=${HF_TOKEN}
+      - HF_READ_TOKEN=${HF_READ_TOKEN}
+    env_file:
+      - .env
+    volumes:
+      - ./data:/app/data
+      - ./models:/app/models
+      - ./logs:/app/logs
+      - ./configs:/app/configs
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    command: python3 -m medical_chatbot.cli gradio
+    restart: unless-stopped
+
+volumes:
+  data:
+  models:
+  logs:
