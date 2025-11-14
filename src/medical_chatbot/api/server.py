@@ -1,4 +1,4 @@
-"""FastAPI server for medical chatbot"""
+"""Enhanced FastAPI server with safety and monitoring features"""
 
 from contextlib import asynccontextmanager
 from typing import Dict, List, Optional
@@ -11,12 +11,15 @@ from pydantic import BaseModel, Field
 from medical_chatbot.inference.generator import MedicalChatGenerator
 from medical_chatbot.models.model_manager import ModelManager
 from medical_chatbot.utils.config import Config
+from medical_chatbot.utils.safety import MedicalSafetyFilter
+from medical_chatbot.utils.monitoring import RequestTimer, get_health_status, metrics_collector
 
 
-# Global variables for model and generator
+# Global variables
 model_manager: Optional[ModelManager] = None
 generator: Optional[MedicalChatGenerator] = None
 config: Optional[Config] = None
+safety_filter: Optional[MedicalSafetyFilter] = None
 
 
 class ChatRequest(BaseModel):
@@ -35,6 +38,7 @@ class ChatResponse(BaseModel):
 
     response: str = Field(..., description="Generated response")
     message: str = Field(..., description="Original user message")
+    is_emergency: Optional[bool] = Field(False, description="Whether emergency was detected")
 
 
 class ConversationRequest(BaseModel):
@@ -56,14 +60,16 @@ class HealthResponse(BaseModel):
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Lifespan events for FastAPI app"""
-    # Startup
-    global model_manager, generator, config
+    """Lifespan events"""
+    global model_manager, generator, config, safety_filter
 
     logger.info("Loading model on startup...")
 
     try:
-        # Load model and tokenizer
+        # Initialize safety filter
+        safety_filter = MedicalSafetyFilter(add_disclaimer=True, detect_emergency=True)
+
+        # Load model
         tokenizer, model = model_manager.load(load_peft=True)
 
         # Create generator
@@ -94,19 +100,10 @@ async def lifespan(app: FastAPI):
 
 
 def create_app(app_config: Config) -> FastAPI:
-    """Create FastAPI application
-
-    Args:
-        app_config: Application configuration
-
-    Returns:
-        FastAPI application
-    """
+    """Create enhanced FastAPI application"""
     global model_manager, config
 
     config = app_config
-
-    # Create model manager
     model_manager = ModelManager(
         model_name=config.model.base_model,
         peft_name=config.model.fine_tuned_model,
@@ -116,15 +113,14 @@ def create_app(app_config: Config) -> FastAPI:
         token=config.hf_token,
     )
 
-    # Create FastAPI app
     app = FastAPI(
         title="Medical Chatbot API",
-        description="醫療聊天機器人 API - 基於 TAIDE/Breeze 模型的中文醫療問答系統",
+        description="Enhanced Medical Chatbot with Safety Features",
         version="0.2.0",
         lifespan=lifespan,
     )
 
-    # Add CORS middleware
+    # CORS
     app.add_middleware(
         CORSMiddleware,
         allow_origins=["*"],
@@ -133,102 +129,120 @@ def create_app(app_config: Config) -> FastAPI:
         allow_headers=["*"],
     )
 
-    @app.get("/", response_model=dict)
+    @app.get("/")
     async def root():
         """Root endpoint"""
         return {
             "name": "Medical Chatbot API",
             "version": "0.2.0",
-            "description": "醫療聊天機器人 API",
+            "description": "Enhanced Medical Chatbot with Safety Features",
         }
 
     @app.get("/health", response_model=HealthResponse)
     async def health():
-        """Health check endpoint"""
+        """Basic health check"""
         return HealthResponse(
             status="healthy" if generator is not None else "unhealthy",
             model_loaded=generator is not None,
         )
 
+    @app.get("/health/detailed")
+    async def health_detailed():
+        """Detailed health check with metrics"""
+        health_status = get_health_status()
+        health_status["model_loaded"] = generator is not None
+        return health_status
+
+    @app.get("/metrics")
+    async def metrics():
+        """Get service metrics"""
+        return metrics_collector.get_metrics()
+
     @app.post("/chat", response_model=ChatResponse)
     async def chat(request: ChatRequest):
-        """Chat endpoint for single-turn conversation
-
-        Args:
-            request: Chat request with user message
-
-        Returns:
-            Generated response
-
-        Raises:
-            HTTPException: If model is not loaded or generation fails
-        """
+        """Enhanced chat endpoint with safety features"""
         if generator is None:
             raise HTTPException(status_code=503, detail="Model not loaded")
 
-        try:
-            # Build generation kwargs
-            gen_kwargs = {}
-            if request.max_new_tokens is not None:
-                gen_kwargs["max_new_tokens"] = request.max_new_tokens
-            if request.temperature is not None:
-                gen_kwargs["temperature"] = request.temperature
-            if request.top_p is not None:
-                gen_kwargs["top_p"] = request.top_p
-            if request.top_k is not None:
-                gen_kwargs["top_k"] = request.top_k
+        with RequestTimer("chat"):
+            try:
+                # Sanitize input
+                sanitized_message = safety_filter.sanitize_input(request.message)
 
-            # Generate response
-            response = generator.generate(
-                user_input=request.message,
-                system_prompt=request.system_prompt,
-                **gen_kwargs,
-            )
+                # Build generation kwargs
+                gen_kwargs = {}
+                if request.max_new_tokens is not None:
+                    gen_kwargs["max_new_tokens"] = request.max_new_tokens
+                if request.temperature is not None:
+                    gen_kwargs["temperature"] = request.temperature
+                if request.top_p is not None:
+                    gen_kwargs["top_p"] = request.top_p
+                if request.top_k is not None:
+                    gen_kwargs["top_k"] = request.top_k
 
-            return ChatResponse(response=response, message=request.message)
+                # Generate response
+                response = generator.generate(
+                    user_input=sanitized_message,
+                    system_prompt=request.system_prompt,
+                    **gen_kwargs,
+                )
 
-        except Exception as e:
-            logger.error(f"Generation failed: {e}")
-            raise HTTPException(status_code=500, detail=f"Generation failed: {str(e)}")
+                # Apply safety filter
+                filtered_response, is_emergency = safety_filter.filter_response(
+                    sanitized_message, response
+                )
+
+                if is_emergency:
+                    logger.warning(f"Emergency detected: {sanitized_message[:100]}")
+
+                return ChatResponse(
+                    response=filtered_response,
+                    message=request.message,
+                    is_emergency=is_emergency,
+                )
+
+            except Exception as e:
+                logger.error(f"Generation failed: {e}")
+                raise HTTPException(status_code=500, detail=f"Generation failed: {str(e)}")
 
     @app.post("/conversation", response_model=ChatResponse)
     async def conversation(request: ConversationRequest):
-        """Conversation endpoint for multi-turn conversation
-
-        Args:
-            request: Conversation request with message history
-
-        Returns:
-            Generated response
-
-        Raises:
-            HTTPException: If model is not loaded or generation fails
-        """
+        """Multi-turn conversation endpoint"""
         if generator is None:
             raise HTTPException(status_code=503, detail="Model not loaded")
 
-        try:
-            # Build generation kwargs
-            gen_kwargs = {}
-            if request.max_new_tokens is not None:
-                gen_kwargs["max_new_tokens"] = request.max_new_tokens
-            if request.temperature is not None:
-                gen_kwargs["temperature"] = request.temperature
+        with RequestTimer("conversation"):
+            try:
+                # Build generation kwargs
+                gen_kwargs = {}
+                if request.max_new_tokens is not None:
+                    gen_kwargs["max_new_tokens"] = request.max_new_tokens
+                if request.temperature is not None:
+                    gen_kwargs["temperature"] = request.temperature
 
-            # Generate response
-            response = generator.chat(messages=request.messages, **gen_kwargs)
+                # Generate response
+                response = generator.chat(messages=request.messages, **gen_kwargs)
 
-            # Get last user message
-            last_user_message = ""
-            for msg in reversed(request.messages):
-                if msg.get("role") == "user":
-                    last_user_message = msg.get("content", "")
-                    break
+                # Get last user message
+                last_user_message = ""
+                for msg in reversed(request.messages):
+                    if msg.get("role") == "user":
+                        last_user_message = msg.get("content", "")
+                        break
 
-            return ChatResponse(response=response, message=last_user_message)
+                # Apply safety filter
+                filtered_response, is_emergency = safety_filter.filter_response(
+                    last_user_message, response
+                )
 
-        except Exception as e:
-            logger.error(f"Generation failed: {e}")
-            raise HTTPException(status_code=500, detail=f"Generation failed: {str(e)}")
+                return ChatResponse(
+                    response=filtered_response,
+                    message=last_user_message,
+                    is_emergency=is_emergency,
+                )
+
+            except Exception as e:
+                logger.error(f"Generation failed: {e}")
+                raise HTTPException(status_code=500, detail=f"Generation failed: {str(e)}")
 
     return app
