@@ -28,7 +28,8 @@ MANIFEST
 
 # Jupyter Notebook
 .ipynb_checkpoints
-*.ipynb
+# Keep original notebooks in notebooks/ directory
+# *.ipynb
 
 # Environment variables
 .env
