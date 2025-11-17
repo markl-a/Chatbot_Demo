@@ -185,6 +185,115 @@ response = requests.post(
 print(response.json())
 ```
 
+## 📚 實際案例
+
+專案包含 **12 個實際應用案例**，涵蓋從基礎使用到進階應用的完整場景。所有案例都包含詳細的中文註釋和使用說明。
+
+### 案例總覽
+
+#### 1. 基礎使用案例 (examples/01_basic_usage/)
+
+- **simple_chat.py** - 簡單的命令行對話示例
+  - 單輪對話
+  - 互動式對話模式
+  - 適合初學者快速上手
+
+- **api_call.py** - REST API 調用示例
+  - 單輪和多輪對話 API
+  - 批量問題處理
+  - 自定義生成參數
+
+- **config_usage.py** - 配置參數使用示例
+  - 載入和使用配置文件
+  - 推理參數調優
+  - 安全配置示範
+
+#### 2. 進階應用案例 (examples/02_advanced_applications/)
+
+- **batch_processing.py** - 批量問題處理
+  - 批量處理多個問題
+  - 並行處理優化
+  - 結果保存 (JSON/CSV)
+  - 處理報告生成
+
+- **multi_turn_conversation.py** - 多輪對話管理
+  - 對話歷史維護
+  - 上下文管理
+  - 對話持久化
+  - 互動式對話
+
+- **performance_optimization.py** - 性能優化
+  - 基準性能測試
+  - 快取機制
+  - 記憶體管理
+  - 參數調優
+
+#### 3. 專業領域案例 (examples/03_domain_specific/)
+
+- **cardiovascular_consultation.py** - 心血管疾病諮詢
+  - 高血壓、心臟病、膽固醇諮詢
+  - 緊急狀況檢測
+  - 漸進式諮詢
+  - 綜合健康評估
+
+- **respiratory_system.py** - 呼吸系統疾病處理
+  - 感冒、咳嗽、氣喘處理
+  - 症狀診斷
+  - 預防指導
+
+- **emergency_detection.py** - 緊急狀況檢測
+  - 嚴重程度評估
+  - 緊急關鍵字檢測
+  - 批量問題分類
+  - 自動回應生成
+
+#### 4. 整合部署案例 (examples/04_integration_deployment/)
+
+- **docker_deployment.py** - Docker 容器化部署
+  - Dockerfile 和 docker-compose.yml 生成
+  - 部署腳本自動化
+  - 健康檢查配置
+
+- **monitoring_logging.py** - 監控與日誌
+  - 結構化日誌記錄
+  - 性能指標收集
+  - 請求追蹤
+  - 錯誤監控
+
+- **security_best_practices.py** - 安全最佳實踐
+  - 輸入驗證和清理
+  - 速率限制
+  - 內容過濾
+  - 敏感資訊保護
+
+### 運行案例
+
+每個案例都可以獨立運行：
+
+```bash
+# 基礎案例
+python examples/01_basic_usage/simple_chat.py
+python examples/01_basic_usage/api_call.py
+python examples/01_basic_usage/config_usage.py
+
+# 進階案例
+python examples/02_advanced_applications/batch_processing.py
+python examples/02_advanced_applications/multi_turn_conversation.py
+python examples/02_advanced_applications/performance_optimization.py
+
+# 領域案例
+python examples/03_domain_specific/cardiovascular_consultation.py
+python examples/03_domain_specific/respiratory_system.py
+python examples/03_domain_specific/emergency_detection.py
+
+# 部署案例
+python examples/04_integration_deployment/docker_deployment.py
+python examples/04_integration_deployment/monitoring_logging.py
+python examples/04_integration_deployment/security_best_practices.py
+```
+
+詳細說明請參閱 [examples/README.md](examples/README.md)
+
 ## 🎓 模型訓練
 
 ### 1. 準備資料集
