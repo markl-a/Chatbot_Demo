@@ -13,6 +13,12 @@ from medical_chatbot.models.model_manager import ModelManager
 from medical_chatbot.utils.config import Config
 from medical_chatbot.utils.safety import MedicalSafetyFilter
 from medical_chatbot.utils.monitoring import RequestTimer, get_health_status, metrics_collector
+from medical_chatbot.utils.error_handler import register_error_handlers, async_handle_errors
+from medical_chatbot.utils.exceptions import (
+    ModelNotLoadedException,
+    ModelInferenceException,
+    UnsafeContentException,
+)
 
 
 # Global variables
@@ -162,7 +168,7 @@ def create_app(app_config: Config) -> FastAPI:
     async def chat(request: ChatRequest):
         """Enhanced chat endpoint with safety features"""
         if generator is None:
-            raise HTTPException(status_code=503, detail="Model not loaded")
+            raise ModelNotLoadedException("生成器未初始化，請稍後再試")
 
         with RequestTimer("chat"):
             try:
@@ -203,13 +209,16 @@ def create_app(app_config: Config) -> FastAPI:
 
             except Exception as e:
                 logger.error(f"Generation failed: {e}")
-                raise HTTPException(status_code=500, detail=f"Generation failed: {str(e)}")
+                raise ModelInferenceException(
+                    f"生成回應失敗: {str(e)}",
+                    details={"original_error": type(e).__name__}
+                )
 
     @app.post("/conversation", response_model=ChatResponse)
     async def conversation(request: ConversationRequest):
         """Multi-turn conversation endpoint"""
         if generator is None:
-            raise HTTPException(status_code=503, detail="Model not loaded")
+            raise ModelNotLoadedException("生成器未初始化，請稍後再試")
 
         with RequestTimer("conversation"):
             try:
@@ -243,6 +252,12 @@ def create_app(app_config: Config) -> FastAPI:
 
             except Exception as e:
                 logger.error(f"Generation failed: {e}")
-                raise HTTPException(status_code=500, detail=f"Generation failed: {str(e)}")
+                raise ModelInferenceException(
+                    f"生成回應失敗: {str(e)}",
+                    details={"original_error": type(e).__name__}
+                )
+
+    # 註冊錯誤處理器
+    register_error_handlers(app)
 
     return app
