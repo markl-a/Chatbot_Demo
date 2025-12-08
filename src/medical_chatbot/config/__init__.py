@@ -19,6 +19,19 @@ from .fastapi_integration import (
     setup_shutdown_events,
     setup_config_integration,
 )
+from .dynamic_config import (
+    DynamicConfigManager,
+    ConfigValue,
+    ConfigChange,
+    ConfigSource,
+    ConfigValidator,
+    TypeValidator,
+    RangeValidator,
+    EnumValidator,
+    get_config_manager,
+    configure_config_manager,
+    setup_config_routes as setup_dynamic_config_routes,
+)
 
 __all__ = [
     # 配置類
@@ -39,4 +52,16 @@ __all__ = [
     "setup_startup_events",
     "setup_shutdown_events",
     "setup_config_integration",
+    # 動態配置
+    "DynamicConfigManager",
+    "ConfigValue",
+    "ConfigChange",
+    "ConfigSource",
+    "ConfigValidator",
+    "TypeValidator",
+    "RangeValidator",
+    "EnumValidator",
+    "get_config_manager",
+    "configure_config_manager",
+    "setup_dynamic_config_routes",
 ]

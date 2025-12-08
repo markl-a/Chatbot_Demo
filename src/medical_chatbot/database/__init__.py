@@ -13,6 +13,10 @@ from .models import (
     Feedback,
 )
 from .manager import DatabaseManager
+from .pool_manager import (
+    DatabasePoolManager,
+    PoolStats,
+)
 
 __all__ = [
     "Base",
@@ -23,4 +27,7 @@ __all__ = [
     "APIKey",
     "Feedback",
     "DatabaseManager",
+    # 連接池管理
+    "DatabasePoolManager",
+    "PoolStats",
 ]
