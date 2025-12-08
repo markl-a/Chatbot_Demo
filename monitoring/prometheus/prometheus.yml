@@ -1,0 +1,46 @@
+# Prometheus 配置
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+# Alertmanager 配置
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+          - alertmanager:9093
+
+# 告警規則
+rule_files:
+  - /etc/prometheus/alerts/*.yml
+
+# 抓取配置
+scrape_configs:
+  # Prometheus 自身
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  # Medical Chatbot API
+  - job_name: 'medical-chatbot'
+    static_configs:
+      - targets: ['medical-chatbot-api:8000']
+    metrics_path: '/metrics'
+    scrape_interval: 10s
+
+  # Medical Chatbot Gradio
+  - job_name: 'medical-chatbot-gradio'
+    static_configs:
+      - targets: ['medical-chatbot-gradio:7860']
+    metrics_path: '/metrics'
+    scrape_interval: 30s
+
+  # Redis (如果啟用 Redis Exporter)
+  - job_name: 'redis'
+    static_configs:
+      - targets: ['redis-exporter:9121']
+
+  # Node Exporter (系統指標)
+  - job_name: 'node'
+    static_configs:
+      - targets: ['node-exporter:9100']

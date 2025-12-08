@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "medical-chatbot"
-version = "0.2.0"
+version = "0.3.0"
 description = "醫療聊天機器人 - 基於 TAIDE/Breeze 模型的中文醫療問答系統"
 readme = "README.md"
 requires-python = ">=3.9"
@@ -51,6 +51,18 @@ api = [
     "uvicorn[standard]>=0.27.0",
     "python-multipart>=0.0.6",
     "gradio>=4.16.0",
+    "websockets>=12.0",
+]
+auth = [
+    "python-jose[cryptography]>=3.3.0",
+    "passlib[bcrypt]>=1.7.4",
+]
+tracing = [
+    "opentelemetry-api>=1.22.0",
+    "opentelemetry-sdk>=1.22.0",
+    "opentelemetry-exporter-otlp>=1.22.0",
+    "opentelemetry-exporter-jaeger>=1.21.0",
+    "opentelemetry-instrumentation-fastapi>=0.43b0",
 ]
 dev = [
     "pytest>=7.4.0",
@@ -67,7 +79,7 @@ training = [
     "optuna>=3.5.0",
 ]
 all = [
-    "medical-chatbot[api,dev,training]",
+    "medical-chatbot[api,auth,tracing,dev,training]",
 ]
 
 [project.urls]

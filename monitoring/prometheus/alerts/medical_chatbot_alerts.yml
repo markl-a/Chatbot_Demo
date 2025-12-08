@@ -1,0 +1,102 @@
+groups:
+  - name: medical_chatbot_alerts
+    rules:
+      # 高錯誤率告警
+      - alert: HighErrorRate
+        expr: sum(rate(http_requests_total{job="medical-chatbot",status=~"5.."}[5m])) / sum(rate(http_requests_total{job="medical-chatbot"}[5m])) > 0.05
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Medical Chatbot 高錯誤率"
+          description: "錯誤率超過 5%，當前值: {{ $value | humanizePercentage }}"
+
+      # 高延遲告警
+      - alert: HighLatency
+        expr: histogram_quantile(0.95, rate(http_request_duration_seconds_bucket{job="medical-chatbot"}[5m])) > 2
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Medical Chatbot 高延遲"
+          description: "P95 延遲超過 2 秒，當前值: {{ $value | humanizeDuration }}"
+
+      # 服務不可用告警
+      - alert: ServiceDown
+        expr: up{job="medical-chatbot"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Medical Chatbot 服務不可用"
+          description: "Medical Chatbot API 服務已停止運行"
+
+      # 模型未載入告警
+      - alert: ModelNotLoaded
+        expr: medical_chatbot_model_loaded == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Medical Chatbot 模型未載入"
+          description: "AI 模型未成功載入，服務無法正常運作"
+
+      # 記憶體使用過高
+      - alert: HighMemoryUsage
+        expr: medical_chatbot_memory_usage_percent > 90
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Medical Chatbot 記憶體使用過高"
+          description: "記憶體使用率超過 90%，當前值: {{ $value }}%"
+
+      # 推理延遲過高
+      - alert: HighInferenceLatency
+        expr: histogram_quantile(0.95, rate(medical_chatbot_inference_duration_seconds_bucket{job="medical-chatbot"}[5m])) > 10
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Medical Chatbot 推理延遲過高"
+          description: "P95 推理延遲超過 10 秒，當前值: {{ $value | humanizeDuration }}"
+
+      # 快取命中率過低
+      - alert: LowCacheHitRate
+        expr: rate(medical_chatbot_cache_hits_total[5m]) / (rate(medical_chatbot_cache_hits_total[5m]) + rate(medical_chatbot_cache_misses_total[5m])) < 0.5
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Medical Chatbot 快取命中率過低"
+          description: "快取命中率低於 50%，當前值: {{ $value | humanizePercentage }}"
+
+      # WebSocket 連接過多
+      - alert: TooManyWebSocketConnections
+        expr: medical_chatbot_active_connections > 1000
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Medical Chatbot WebSocket 連接過多"
+          description: "活躍 WebSocket 連接數超過 1000，當前值: {{ $value }}"
+
+      # 斷路器開啟
+      - alert: CircuitBreakerOpen
+        expr: medical_chatbot_circuit_breaker_state == 2
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Medical Chatbot 斷路器已開啟"
+          description: "斷路器已開啟，服務可能不穩定"
+
+      # 速率限制觸發過多
+      - alert: HighRateLimitHits
+        expr: rate(medical_chatbot_rate_limit_hits_total[5m]) > 100
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Medical Chatbot 速率限制觸發頻繁"
+          description: "速率限制每分鐘觸發超過 100 次"
